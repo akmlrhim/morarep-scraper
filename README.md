@@ -5,22 +5,22 @@ kafe, sekolah, dll.) dari **OpenStreetMap**, mengecek jangkauan **FTTH/FWA**
 lewat SheetDB, dan menampilkan hasilnya di dashboard **Streamlit**. Cocok
 buat kamu yang sedang meriset area layanan WiFi/Fiber.
 
-Aplikasi ini hanya **mengumpulkan dan menampilkan** data — tidak mengirim
+Aplikasi ini hanya **mengumpulkan dan menampilkan** data, tidak mengirim
 WhatsApp / email apa pun.
 
 ## Apa yang Kamu Dapatkan
 
-- **Dashboard interaktif** — cari leads per kota atau titik pusat + radius,
+- **Dashboard interaktif**: cari leads per kota atau titik pusat + radius,
   filter berdasarkan skor/segmen/jangkauan, lihat peta sebaran.
-- **Riwayat scraping** — setiap pencarian tersimpan otomatis (SQLite lokal
+- **Riwayat scraping**: setiap pencarian tersimpan otomatis (SQLite lokal
   atau Postgres saat deploy), bisa dibuka ulang kapan saja.
-- **Cek jangkauan FTTH/FWA** — tiap leads dinilai dalam/luar jangkauan
+- **Cek jangkauan FTTH/FWA**: tiap leads dinilai dalam/luar jangkauan
   berdasarkan titik ODP dan site FWA dari SheetDB.
-- **Skor prospek otomatis** — leads diurutkan dari potensi terbesar,
+- **Skor prospek otomatis**: leads diurutkan dari potensi terbesar,
   lengkap dengan alasan skornya.
-- **Ekspor CSV** — unduh hasil sesuai filter yang sedang aktif.
-- **Mode CLI** — semua fitur bisa dipakai tanpa dashboard lewat terminal.
-- **Analisis website (opsional)** — kunjungi website bisnis untuk menemukan
+- **Ekspor CSV**: unduh hasil sesuai filter yang sedang aktif.
+- **Mode CLI**: semua fitur bisa dipakai tanpa dashboard lewat terminal.
+- **Analisis website (opsional)**: kunjungi website bisnis untuk menemukan
   email, WhatsApp, dan sebutan kompetitor. Tidak mengirim apa pun.
 
 ## Struktur Proyek
@@ -34,7 +34,7 @@ morarep-scrappers/
 └── index.ipynb                # Notebook dokumentasi cara pakai CLI
 ```
 
-Folder `venv/` tidak ikut di repo — kamu buat sendiri di langkah berikut.
+Folder `venv/` tidak ikut di repo, kamu buat sendiri di langkah berikut.
 
 ## Persyaratan
 
@@ -112,16 +112,52 @@ sidebar (syarat pemakaian Nominatim/Overpass), atur parameter, klik
 - Setiap pencarian yang berhasil **otomatis tersimpan**:
   - **Di komputermu**: file `morarepublic_history.db` (SQLite) di folder proyek.
   - **Saat deploy** (Streamlit Cloud dll): database hosted (Postgres/Supabase)
-    lewat Secret `DATABASE_URL` — lihat bagian [Deploy ke Streamlit Cloud](#deploy-ke-streamlit-cloud).
+    lewat Secret `DATABASE_URL`, lihat bagian [Deploy ke Streamlit Cloud](#deploy-ke-streamlit-cloud).
 - Buka tab **Riwayat scraping** untuk melihat sesi-sesi sebelumnya:
   metrics, tabel, peta, unduh CSV per sesi, hapus sesi.
 - Backup lokal cukup dengan menyalin file `.db` tersebut.
-  (File tidak bisa dihapus saat dashboard sedang berjalan — tutup dulu.)
+  (File tidak bisa dihapus saat dashboard sedang berjalan, tutup dulu.)
 
 ### Unduh Hasil
 
 Di tab **Hasil**, tombol **Unduh CSV** mengunduh data sesuai filter
 yang sedang aktif. Di tab riwayat, tiap sesi punya tombol unduh sendiri.
+
+## Kamus Istilah di Sidebar
+
+Beberapa istilah di sidebar dashboard mungkin asing. Ini artinya:
+
+| Istilah di Sidebar | Artinya |
+| --- | --- |
+| **Area: Per kota** | Mencari leads di seluruh wilayah satu kota (dikirim ke Nominatim untuk mendapatkan batas wilayahnya). |
+| **Area: Titik pusat + radius** | Mencari leads dalam lingkaran dari satu koordinat (lat,lon) dengan jarak tertentu. Cocok kalau target kamu cuma sekitar lokasi tertentu. |
+| **Radius (km)** | Jarak lingkaran pencarian dari titik pusat (mode titik pusat). |
+| **Segmen** | Jenis tempat yang dicari: kos, hotel, perumahan, apartemen, sekolah, klinik, coworking, kantor, kafe, gym, toko. Sumber datanya tag/label di OpenStreetMap. |
+| **Bobot** (di belakang tiap segmen) | Nilai potensi segmen itu: makin tinggi bobot, makin besar kontribusinya ke skor leads. Contoh: kos dan hotel bobot 5 (calon pelanggan banyak), toko bobot 2. |
+| **Maks. leads** | Batas jumlah hasil yang disimpan per pencarian. |
+| **Cek jangkauan FTTH/FWA** | Menyocokkan lokasi tiap leads dengan titik jaringan milik ISP (dari SheetDB) supaya tahu leads itu masuk area layanan atau tidak. |
+| **FTTH** | *Fiber To The Home*: internet serat optik sampai ke pelanggan. Kecepatan dan stabilitas paling tinggi. Leads "dalam jangkauan FTTH" berarti dekat dengan titik ODP. |
+| **FWA** | *Fixed Wireless Access*: internet lewat sinyal radio dari menara/site ke rumah, tanpa kabel. Kualitas biasanya di bawah FTTH, tapi menjangkau area yang belum terjangkau kabel. |
+| **ODP** | *Optical Distribution Point*: titik pembagian kabel serat optik terdekat dengan pelanggan. Makin dekat leads ke ODP, makin murah dan cepat pemasangan FTTH. |
+| **Radius FTTH (m)** | Leads dianggap terjangkau FTTH kalau jaraknya ke ODP terdekat tidak lebih dari nilai ini (default 250 m). |
+| **Radius FWA (m)** | Sama, tapi untuk site FWA terdekat (default 1000 m), karena sinyal radio boleh lebih jauh. |
+| **Hanya yang dalam jangkauan** | Buang leads yang tidak masuk radius FTTH maupun FWA, sehingga hasilnya cuma calon pelanggan yang realistis dilayani. |
+| **Unduh ulang data jangkauan** | Data titik FTTH/FWA di-cache di `coverage_cache.json` supaya hemat kuota SheetDB. Centang ini kalau sheet barusan kamu update dan ingin ambil data terbaru. |
+| **Analisis website bisnis** | Membuka website tiap leads untuk mencari email, nomor WhatsApp, dan sebutan kompetitor (IndiHome, Biznet, dll.). Hasilnya sinyal tambahan untuk skor. Lebih lambat karena membuka banyak situs. |
+| **Thread** | Jumlah website yang dibuka paralel saat analisis website (1-8). Makin besar makin cepat, tapi makin berat ke server target, cukup 4. |
+| **Jeda antar request (detik)** | Jeda tiap thread sebelum membuka halaman berikutnya. Jaga tetap ada (±1 detik) supaya tidak dianggap serangan oleh server tujuan. |
+| **Email kontak** (di atas) | Identitas kamu yang dikirim ke API Nominatim/Overpass sebagai User-Agent, sesuai kewajiban syarat pemakaian keduanya. Wajib diisi, tapi tidak dipakai untuk menghubungi siapa pun. |
+| **Skor** (di tabel hasil) | Angka hasil penilaian otomatis: bobot segmen + jangkauan + kapasitas + kelengkapan kontak. Makin tinggi, makin layak dihubungi duluan. |
+| **Jangkauan** (di tabel hasil) | Status leads: `FTTH` (dalam jangkauan serat optik), `FWA` (cuma terjangkau radio), atau `tidak` (di luar keduanya). |
+
+Istilah pendukung yang muncul di README dan kode:
+
+| Istilah | Artinya |
+| --- | --- |
+| **SheetDB** | Layanan yang mengubah Google Sheet jadi API. Dipakai untuk menyimpan daftar titik ODP dan site FWA. |
+| **Overpass API** | Mesin pencari data OpenStreetMap, dipakai untuk mengambil daftar tempat per kota/radius. |
+| **Nominatim** | Layanan geocoding OpenStreetMap, mengubah nama kota jadi batas wilayah, dan mengambil koordinat. |
+| **Enrichment** | Tahap memperkaya data leads dengan info tambahan (dari website bisnis) setelah data dasar terkumpul. |
 
 ## 4. Jalankan Scraper dari Terminal (tanpa dashboard)
 
@@ -147,7 +183,7 @@ python morarepublic.py --list-kategori
 Hasil default tersimpan ke `morarepublic.csv` (ubah dengan `--output namafile.csv`).
 
 > Sebelum pakai CLI, ganti `CONTACT_EMAIL` di bagian atas `morarepublic.py`
-> dengan email kamu — ini identitas yang dikirim ke API Nominatim/Overpass.
+> dengan email kamu, karena itu identitas yang dikirim ke API Nominatim/Overpass.
 
 ## Matikan venv
 
@@ -180,7 +216,7 @@ variable `DATABASE_URL`.
 
 - **Jangan pernah push `morarepublic_history.db` ke repo publik.** File itu
   berisi hasil scraping: nama bisnis, alamat, nomor WhatsApp/telepon, dan
-  email — menyebarluaskannya berarti menyebarluaskan data kontak orang lain.
+  email; menyebarluaskannya berarti menyebarluaskan data kontak orang lain.
   `.gitignore` di repo ini sudah mengecualikannya (`*.db`), jadi biarkan
   begitu. Kalau tidak sengaja sudah ter-commit, hapus dari riwayat git,
   bukan sekadar dari commit terakhir.
@@ -191,7 +227,7 @@ variable `DATABASE_URL`.
   adalah endpoint baca publik tanpa kunci yang dipakai bersama. Kalau kamu
   serius memakai tools ini, buat sheet dan endpoint SheetDB milikmu sendiri,
   lalu arahkan lewat `--ftth-url` / `--fwa-url` (CLI) atau ganti konstanta
-  di file — dengan begitu kuota tidak bergantung pada pihak lain.
+  di file, dengan begitu kuota tidak bergantung pada pihak lain.
 
 ## Troubleshooting
 
@@ -199,7 +235,7 @@ variable `DATABASE_URL`.
 | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ModuleNotFoundError: No module named 'requests'` (atau `streamlit`, `pandas`, `bs4`) | Paket belum terinstall di environment yang sedang aktif. Aktifkan venv lalu `pip install -r requirements.txt`.                                                                   |
 | `ModuleNotFoundError: No module named 'morarepublic'` saat jalankan `app.py`          | Python tidak melihat folder skrip (beberapa distribusi Python berjalan mode _isolated_). `app.py` sudah punya penanganan otomatis. Untuk CLI, jalankan dari dalam folder proyek. |
-| `ModuleNotFoundError: No module named 'morarepublic'` padahal file ada                | File mungkin terhapus — cek **Recycle Bin**. `morarepublic.py` harus satu folder dengan `app.py`.                                                                                |
+| `ModuleNotFoundError: No module named 'morarepublic'` padahal file ada                | File mungkin terhapus, cek **Recycle Bin**. `morarepublic.py` harus satu folder dengan `app.py`.                                                                                |
 | Aktivasi venv gagal di PowerShell                                                     | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, lalu ulangi.                                                                                                       |
 | `streamlit` tidak dikenali                                                            | Pakai `python -m streamlit run app.py`, atau aktifkan venv dulu.                                                                                                                 |
 | Riwayat kosong / hilang                                                               | File `morarepublic_history.db` mungkin terhapus; riwayat lama tidak bisa dikembalikan kecuali dari backup.                                                                       |
@@ -207,7 +243,7 @@ variable `DATABASE_URL`.
 ## Catatan Pemakaian yang Bertanggung Jawab
 
 - **Wajib** isi email kontak yang benar di dashboard, dan ganti
-  `CONTACT_EMAIL` di `morarepublic.py` kalau pakai CLI — ini syarat
+  `CONTACT_EMAIL` di `morarepublic.py` kalau pakai CLI, karena itu syarat
   pemakaian Nominatim & Overpass.
 - Data berasal dari OpenStreetMap (ODbL). Hormati ketentuan lisensi saat
   mempublikasikan ulang.
