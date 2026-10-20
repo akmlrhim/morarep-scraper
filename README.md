@@ -1,4 +1,4 @@
-# MoraRepublic — Scraper Leads + Dashboard
+# MoraRepublic - Scraper Leads + Dashboard
 
 MoraRepublic adalah tools gratis untuk mengumpulkan data bisnis (kos, hotel,
 kafe, sekolah, dll.) dari **OpenStreetMap**, mengecek jangkauan **FTTH/FWA**
@@ -195,14 +195,14 @@ variable `DATABASE_URL`.
 
 ## Troubleshooting
 
-| Masalah                                                                               | Penyebab & Solusi                                                                                                                                                                                |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ModuleNotFoundError: No module named 'requests'` (atau `streamlit`, `pandas`, `bs4`) | Paket belum terinstall di environment yang sedang aktif. Aktifkan venv lalu `pip install -r requirements.txt`.                                                                                   |
-| `ModuleNotFoundError: No module named 'morarepublic'` saat jalankan `app.py`          | Python tidak melihat folder skrip (beberapa distribusi Python berjalan mode _isolated_). `app.py` sudah punya penanganan otomatis. Untuk CLI, jalankan dari dalam folder proyek.                  |
-| `ModuleNotFoundError: No module named 'morarepublic'` padahal file ada                | File mungkin terhapus — cek **Recycle Bin**. `morarepublic.py` harus satu folder dengan `app.py`.                                                                                                |
-| Aktivasi venv gagal di PowerShell                                                     | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, lalu ulangi.                                                                                                                       |
-| `streamlit` tidak dikenali                                                            | Pakai `python -m streamlit run app.py`, atau aktifkan venv dulu.                                                                                                                                 |
-| Riwayat kosong / hilang                                                               | File `morarepublic_history.db` mungkin terhapus; riwayat lama tidak bisa dikembalikan kecuali dari backup.                                                                                       |
+| Masalah                                                                               | Penyebab & Solusi                                                                                                                                                                |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ModuleNotFoundError: No module named 'requests'` (atau `streamlit`, `pandas`, `bs4`) | Paket belum terinstall di environment yang sedang aktif. Aktifkan venv lalu `pip install -r requirements.txt`.                                                                   |
+| `ModuleNotFoundError: No module named 'morarepublic'` saat jalankan `app.py`          | Python tidak melihat folder skrip (beberapa distribusi Python berjalan mode _isolated_). `app.py` sudah punya penanganan otomatis. Untuk CLI, jalankan dari dalam folder proyek. |
+| `ModuleNotFoundError: No module named 'morarepublic'` padahal file ada                | File mungkin terhapus — cek **Recycle Bin**. `morarepublic.py` harus satu folder dengan `app.py`.                                                                                |
+| Aktivasi venv gagal di PowerShell                                                     | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, lalu ulangi.                                                                                                       |
+| `streamlit` tidak dikenali                                                            | Pakai `python -m streamlit run app.py`, atau aktifkan venv dulu.                                                                                                                 |
+| Riwayat kosong / hilang                                                               | File `morarepublic_history.db` mungkin terhapus; riwayat lama tidak bisa dikembalikan kecuali dari backup.                                                                       |
 
 ## Catatan Pemakaian yang Bertanggung Jawab
 
