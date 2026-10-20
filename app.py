@@ -22,9 +22,6 @@ import time
 import pandas as pd
 import streamlit as st
 
-# Pastikan folder file ini ada di sys.path, supaya `import morarepublic`
-# selalu berhasil walau Python berjalan dalam mode isolated (mis. ada
-# python314._pth dari Laragon yang menghapus folder skrip dari sys.path).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import morarepublic as L
@@ -33,14 +30,6 @@ OUT_PATH = os.path.join(tempfile.gettempdir(), "morarepublic_streamlit.csv")
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "morarepublic_history.db")
 
 
-# ----------------------------------------------------------------------------
-# Penyimpanan riwayat (SQLite lokal, atau Postgres hosted saat deploy)
-#
-# Lokal    : file morarepublic_history.db (SQLite), tanpa setup apa pun.
-# Deploy   : isi Secret "DATABASE_URL" di Streamlit Cloud, contoh:
-#            postgresql+psycopg://user:password@host:5432/namadb
-#            sehingga riwayat tetap ada walau app di-restart/redeploy.
-# ----------------------------------------------------------------------------
 @st.cache_resource
 def _engine():
     """Engine SQLAlchemy: Postgres kalau ada DATABASE_URL, selain itu SQLite lokal."""
@@ -62,10 +51,10 @@ def new_run_id():
             ada = con.execute(
                 text("SELECT 1 FROM runs WHERE run_id = :rid"), {"rid": rid}
             ).fetchone()
-        if ada:  # bentrok detik yang sama, tambah akhiran unik
+        if ada:
             rid += "-" + os.urandom(2).hex()
     except Exception:
-        pass  # tabel belum ada (jalanan pertama) — pakai ID apa adanya
+        pass
     return rid
 
 
@@ -87,7 +76,7 @@ def load_runs():
     try:
         return pd.read_sql("SELECT * FROM runs ORDER BY run_id DESC", _engine())
     except Exception:
-        return pd.DataFrame()  # database belum ada / kosong
+        return pd.DataFrame()
 
 
 def load_leads(run_id):
@@ -111,9 +100,6 @@ def delete_run(run_id):
 st.set_page_config(page_title="MoraRepublic", layout="wide")
 st.title("MoraRepublic")
 
-# ----------------------------------------------------------------------------
-# Sidebar: parameter pencarian
-# ----------------------------------------------------------------------------
 with st.sidebar:
     st.header("Pencarian")
 
@@ -161,9 +147,6 @@ with st.sidebar:
     jalankan = st.button("Cari leads", type="primary", width="stretch")
 
 
-# ----------------------------------------------------------------------------
-# Jalankan pencarian
-# ----------------------------------------------------------------------------
 def build_argv():
     argv = [
         "--kategori", ",".join(kategori),
@@ -198,7 +181,6 @@ if jalankan:
     elif not email.strip() or "@" not in email:
         st.error("Isi email kontak yang valid (syarat pemakaian Nominatim/Overpass).")
     else:
-        # pasang identitas di User-Agent (dict HEADERS dipakai bersama oleh semua fungsi)
         ua = f"MoraRepublic/1.0 (riset area layanan; {email.strip()})"
         L.USER_AGENT = ua
         L.HEADERS["User-Agent"] = ua
@@ -212,7 +194,7 @@ if jalankan:
             try:
                 with contextlib.redirect_stdout(buf):
                     L.main(build_argv())
-            except SystemExit as e:  # skrip memakai sys.exit(pesan) untuk error fatal
+            except SystemExit as e:
                 error_msg = str(e.code) if e.code not in (None, 0) else ""
             except Exception as e:
                 error_msg = f"{type(e).__name__}: {e}"
@@ -226,7 +208,6 @@ if jalankan:
             ).fillna("")
             st.session_state["df"] = df_baru
 
-            # simpan ke riwayat
             area = kota.strip() if mode == "Per kota" else f"{pusat.strip()} (radius {radius_km} km)"
             try:
                 run_id = save_run(
@@ -251,9 +232,6 @@ if jalankan:
 
 tab_hasil, tab_riwayat = st.tabs(["Hasil", "Riwayat scraping"])
 
-# ----------------------------------------------------------------------------
-# Tab hasil
-# ----------------------------------------------------------------------------
 with tab_hasil:
     df = st.session_state.get("df")
     log = st.session_state.get("log", "")
@@ -268,7 +246,6 @@ with tab_hasil:
         else:
             st.info("Atur parameter di sidebar, lalu klik **Cari leads**.")
     else:
-        # filter
         c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
         skor_min = c1.slider("Skor minimum", int(df["skor"].min()), int(df["skor"].max()), int(df["skor"].min()))
         opsi_jangkauan = sorted(x for x in df["jangkauan"].unique() if x)
@@ -286,7 +263,6 @@ with tab_hasil:
         if hanya_kontak:
             f = f[(f["whatsapp"] != "") | (f["telepon"] != "") | (f["email"] != "")]
 
-        # ringkasan
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Total leads", len(f))
         m2.metric("FTTH", int((f["jangkauan"] == "FTTH").sum()))
@@ -324,9 +300,6 @@ with tab_hasil:
         with st.expander("Log proses"):
             st.code(log)
 
-# ----------------------------------------------------------------------------
-# Tab riwayat scraping
-# ----------------------------------------------------------------------------
 with tab_riwayat:
     runs = load_runs()
     if runs.empty:

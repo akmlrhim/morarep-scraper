@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Leads Finder untuk MoraRepublic (WiFi/Fiber, gratis, tanpa API key)
 
@@ -56,7 +55,6 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-# True bila dijalankan di Colab / Jupyter (sys.argv berisi "-f kernel.json" milik kernel)
 IN_NOTEBOOK = "ipykernel" in sys.modules or "google.colab" in sys.modules
 
 CONTACT_EMAIL = "akmalrahim376@gmail.com"
@@ -74,8 +72,6 @@ def sel(key, values):
     return f'["{key}"~"^(' + "|".join(values) + ')$"]'
 
 
-# Tiap kategori: bobot = nilai segmen (potensi jumlah pengguna/kontrak),
-# combos = daftar kombinasi filter OSM (tiap kombinasi = AND, antar kombinasi = OR)
 KATEGORI = {
     "kos": {
         "bobot": 5,
@@ -147,9 +143,6 @@ WA_RE = re.compile(r"(?:wa\.me/|api\.whatsapp\.com/send\?phone=|whatsapp\.com/se
 WIFI_RE = re.compile(r"wi-?fi|hotspot|internet|fiber|fibre", re.I)
 
 
-# ----------------------------------------------------------------------------
-# Geo helper
-# ----------------------------------------------------------------------------
 def haversine_m(lat1, lon1, lat2, lon2):
     r = 6371000
     p1, p2 = math.radians(lat1), math.radians(lat2)
@@ -230,7 +223,7 @@ def nearest(lat, lon, pts):
     """Titik terdekat -> (jarak_meter, nama). (None, '') bila tidak ada dalam ~55 km."""
     best, name = None, ""
     for a, b, n in pts:
-        if abs(a - lat) > 0.5 or abs(b - lon) > 0.5:  # prefilter kasar
+        if abs(a - lat) > 0.5 or abs(b - lon) > 0.5:
             continue
         d = haversine_m(lat, lon, a, b)
         if best is None or d < best:
@@ -238,9 +231,6 @@ def nearest(lat, lon, pts):
     return best, name
 
 
-# ----------------------------------------------------------------------------
-# 1) Ambil data dari OpenStreetMap
-# ----------------------------------------------------------------------------
 def geocode(kota):
     r = requests.get(
         NOMINATIM_URL,
@@ -323,9 +313,6 @@ def to_lead(el, label):
     }
 
 
-# ----------------------------------------------------------------------------
-# 2) Enrichment website (opsional)
-# ----------------------------------------------------------------------------
 def norm_url(u):
     if not u:
         return ""
@@ -409,9 +396,6 @@ def analyze_site(lead, delay):
     return out, emails, wa, soc
 
 
-# ----------------------------------------------------------------------------
-# 3) Skor
-# ----------------------------------------------------------------------------
 def score_lead(l, coverage_on):
     score, why = KATEGORI[l["segmen"]]["bobot"], [f"segmen {l['segmen']}"] if l["segmen"] in KATEGORI else []
     if coverage_on:
@@ -469,7 +453,6 @@ def main(argv=None):
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--output", default="morarepublic.csv")
     ap.add_argument("--list-kategori", action="store_true")
-    # parse_known_args: argumen bawaan kernel Jupyter/Colab ("-f ...json") diabaikan
     args, unknown = ap.parse_known_args(argv)
     if unknown and not IN_NOTEBOOK:
         ap.error("argumen tidak dikenal: " + " ".join(unknown))
@@ -525,7 +508,6 @@ def main(argv=None):
               "Coba perbesar radius atau ganti kategori (cakupan OSM belum merata).")
         return
 
-    # cek jangkauan FTTH / FWA
     for l in leads:
         if coverage_on:
             d1, n1 = nearest(l["latitude"], l["longitude"], ftth)
@@ -554,11 +536,9 @@ def main(argv=None):
                       "atau jalankan tanpa --hanya-dalam-jangkauan.")
                 return
 
-    # prioritaskan yang punya kontak sebelum dipotong limit
     leads.sort(key=lambda x: bool(x["whatsapp"] or x["telepon"] or x["email"] or x["website"]), reverse=True)
     leads = leads[: args.limit]
 
-    # enrichment
     for l in leads:
         l.update({"wifi_disebut": "", "kompetitor": "", "site_status": ""})
     if args.enrich:
@@ -597,17 +577,17 @@ def main(argv=None):
     wa_n = sum(1 for l in leads if l["whatsapp"])
     print(f"\n[ok] {len(leads)} leads -> {args.output} | skor >= 10: {hot} | punya WhatsApp: {wa_n}")
     print(f"[ok] Lokasi file: {os.path.abspath(args.output)}")
-    if IN_NOTEBOOK:  # tampilkan pratinjau tabel langsung di notebook
+    if IN_NOTEBOOK:
         try:
             import pandas as pd
-            from IPython.display import display  # type: ignore
+            from IPython.display import display
             display(pd.read_csv(args.output, encoding="utf-8-sig").head(15))
         except Exception:
             pass
 
-    if "google.colab" in sys.modules:  # unduh otomatis di Colab
+    if "google.colab" in sys.modules:
         try:
-            from google.colab import files  # type: ignore
+            from google.colab import files
             files.download(args.output)
         except Exception as ex:
             print(f"[i] Unduh otomatis gagal ({type(ex).__name__}); ambil manual dari panel Files di kiri.")

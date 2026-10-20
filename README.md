@@ -1,9 +1,27 @@
 # MoraRepublic — Scraper Leads + Dashboard
 
-Kumpulkan data bisnis (kos, hotel, kafe, sekolah, dll.) dari **OpenStreetMap**,
-cek jangkauan **FTTH/FWA** (SheetDB), lalu tampilkan di dashboard **Streamlit**.
+MoraRepublic adalah tools gratis untuk mengumpulkan data bisnis (kos, hotel,
+kafe, sekolah, dll.) dari **OpenStreetMap**, mengecek jangkauan **FTTH/FWA**
+lewat SheetDB, dan menampilkan hasilnya di dashboard **Streamlit**. Cocok
+buat kamu yang sedang meriset area layanan WiFi/Fiber.
+
 Aplikasi ini hanya **mengumpulkan dan menampilkan** data — tidak mengirim
 WhatsApp / email apa pun.
+
+## Apa yang Kamu Dapatkan
+
+- **Dashboard interaktif** — cari leads per kota atau titik pusat + radius,
+  filter berdasarkan skor/segmen/jangkauan, lihat peta sebaran.
+- **Riwayat scraping** — setiap pencarian tersimpan otomatis (SQLite lokal
+  atau Postgres saat deploy), bisa dibuka ulang kapan saja.
+- **Cek jangkauan FTTH/FWA** — tiap leads dinilai dalam/luar jangkauan
+  berdasarkan titik ODP dan site FWA dari SheetDB.
+- **Skor prospek otomatis** — leads diurutkan dari potensi terbesar,
+  lengkap dengan alasan skornya.
+- **Ekspor CSV** — unduh hasil sesuai filter yang sedang aktif.
+- **Mode CLI** — semua fitur bisa dipakai tanpa dashboard lewat terminal.
+- **Analisis website (opsional)** — kunjungi website bisnis untuk menemukan
+  email, WhatsApp, dan sebutan kompetitor. Tidak mengirim apa pun.
 
 ## Struktur Proyek
 
@@ -13,23 +31,34 @@ morarep-scrappers/
 ├── app.py                     # Dashboard Streamlit + riwayat scraping
 ├── requirements.txt           # Daftar paket Python
 ├── morarepublic_history.db    # (dibuat otomatis) database riwayat scraping
-├── index.ipynb                # Notebook dokumentasi cara pakai CLI
-└── venv/                      # Virtual environment Python
+└── index.ipynb                # Notebook dokumentasi cara pakai CLI
 ```
+
+Folder `venv/` tidak ikut di repo — kamu buat sendiri di langkah berikut.
 
 ## Persyaratan
 
-- Windows
-- Python 3.14
+- Windows / Linux / macOS
+- Python 3.14 (versi 3.x lain besar kemungkinan juga jalan)
 - Koneksi internet (akses Nominatim, Overpass, SheetDB)
+- Git (untuk clone repo)
 
-## 1. Aktifkan Virtual Environment (venv)
+## 1. Clone Repo & Buat Virtual Environment
 
-Buka terminal di folder proyek:
+Clone repo ini, lalu masuk ke foldernya:
 
 ```powershell
-cd E:\DataAnalyst\morarep-scrappers
+git clone <URL-repo-ini>
+cd morarep-scrappers
 ```
+
+Buat virtual environment baru:
+
+```powershell
+python -m venv venv
+```
+
+Aktifkan:
 
 **PowerShell:**
 
@@ -41,6 +70,12 @@ cd E:\DataAnalyst\morarep-scrappers
 
 ```bat
 venv\Scripts\activate.bat
+```
+
+**Linux / macOS:**
+
+```bash
+source venv/bin/activate
 ```
 
 Setelah aktif, awal prompt berubah jadi `(venv)`. Semua perintah `python`
@@ -59,7 +94,8 @@ dan `pip` di bawah ini dijalankan dalam keadaan venv aktif.
 pip install -r requirements.txt
 ```
 
-Isi `requirements.txt`: `streamlit`, `pandas`, `requests`, `beautifulsoup4`.
+Isi `requirements.txt`: `streamlit`, `pandas`, `requests`, `beautifulsoup4`,
+`sqlalchemy`.
 
 ## 3. Jalankan Dashboard
 
@@ -73,8 +109,8 @@ sidebar (syarat pemakaian Nominatim/Overpass), atur parameter, klik
 
 ### Riwayat Scraping
 
-- Setiap pencarian yang berhasil **otomatis tersimpan** ke database:
-  - **Di komputer sendiri**: file `morarepublic_history.db` (SQLite) di folder proyek.
+- Setiap pencarian yang berhasil **otomatis tersimpan**:
+  - **Di komputermu**: file `morarepublic_history.db` (SQLite) di folder proyek.
   - **Saat deploy** (Streamlit Cloud dll): database hosted (Postgres/Supabase)
     lewat Secret `DATABASE_URL` — lihat bagian [Deploy ke Streamlit Cloud](#deploy-ke-streamlit-cloud).
 - Buka tab **Riwayat scraping** untuk melihat sesi-sesi sebelumnya:
@@ -110,6 +146,9 @@ python morarepublic.py --list-kategori
 
 Hasil default tersimpan ke `morarepublic.csv` (ubah dengan `--output namafile.csv`).
 
+> Sebelum pakai CLI, ganti `CONTACT_EMAIL` di bagian atas `morarepublic.py`
+> dengan email kamu — ini identitas yang dikirim ke API Nominatim/Overpass.
+
 ## Matikan venv
 
 ```powershell
@@ -119,12 +158,12 @@ deactivate
 ## Deploy ke Streamlit Cloud
 
 Filesystem Streamlit Community Cloud **sementara**: file yang ditulis saat
-runtime (termasuk SQLite) hilang tiap app di-restart/redeploy. Karena itu
-versi deploy memakai database hosted:
+runtime (termasuk SQLite) hilang tiap app di-restart/redeploy. Kalau kamu
+men-deploy versi kamu, pakai database hosted:
 
 1. Buat database Postgres gratis, misalnya [Supabase](https://supabase.com)
    atau [Neon](https://neon.tech). Catat connection string-nya.
-2. Push repo ini ke GitHub, lalu deploy di <https://share.streamlit.io>.
+2. Push repo kamu ke GitHub, lalu deploy di <https://share.streamlit.io>.
 3. Di Streamlit Cloud: **App settings → Secrets**, tambahkan:
 
    ```toml
@@ -137,29 +176,29 @@ versi deploy memakai database hosted:
 Di lokal pun bisa memakai Postgres dengan cara yang sama lewat environment
 variable `DATABASE_URL`.
 
-## Apakah `morarepublic_history.db` Aman Dipublish?
+## Hal yang Perlu Kamu Tahu Soal Data
 
-**Tidak disarankan.** File tersebut berisi hasil scraping: nama bisnis,
-alamat, nomor WhatsApp/telepon, dan email. Menaruhnya di repo publik sama
-dengan menyebarkan data kontak itu. `.gitignore` sudah mengecualikannya
-(`*.db`). Kalau tidak sengaja sudah ter-commit, hapus dari riwayat git, bukan
-sekadar dari commit terakhir.
-
-Terkait data sumber: hasil scraping berasal dari OpenStreetMap (lisensi
-ODbL) — jika dipublikasikan ulang, sertakan atribusi dan ikuti ketentuan
-lisensinya.
-
-URL SheetDB (`FTTH_URL` / `FWA_URL` di `morarepublic.py`) adalah endpoint
-baca publik tanpa kunci. Kalau repo dipublikasikan, orang lain bisa ikut
-memakai kuota SheetDB kamu. Kalau kuota jadi masalah, pindahkan URL ke
-Secret/environment variable dengan pola yang sama seperti `DATABASE_URL`.
+- **Jangan pernah push `morarepublic_history.db` ke repo publik.** File itu
+  berisi hasil scraping: nama bisnis, alamat, nomor WhatsApp/telepon, dan
+  email — menyebarluaskannya berarti menyebarluaskan data kontak orang lain.
+  `.gitignore` di repo ini sudah mengecualikannya (`*.db`), jadi biarkan
+  begitu. Kalau tidak sengaja sudah ter-commit, hapus dari riwayat git,
+  bukan sekadar dari commit terakhir.
+- **Data sumber berasal dari OpenStreetMap (lisensi ODbL).** Kalau kamu
+  mempublikasikan ulang hasil scraping, sertakan atribusi dan ikuti
+  ketentuan lisensinya.
+- **URL SheetDB bawaan** (`FTTH_URL` / `FWA_URL` di `morarepublic.py`)
+  adalah endpoint baca publik tanpa kunci yang dipakai bersama. Kalau kamu
+  serius memakai tools ini, buat sheet dan endpoint SheetDB milikmu sendiri,
+  lalu arahkan lewat `--ftth-url` / `--fwa-url` (CLI) atau ganti konstanta
+  di file — dengan begitu kuota tidak bergantung pada pihak lain.
 
 ## Troubleshooting
 
 | Masalah                                                                               | Penyebab & Solusi                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ModuleNotFoundError: No module named 'requests'` (atau `streamlit`, `pandas`, `bs4`) | Paket belum terinstall di environment yang sedang aktif. Aktifkan venv lalu `pip install -r requirements.txt`.                                                                                   |
-| `ModuleNotFoundError: No module named 'morarepublic'` saat jalankan `app.py`          | Python tidak melihat folder skrip (Python Laragon berjalan mode _isolated_ karena ada `python314._pth`). `app.py` sudah punya penanganan otomatis. Untuk CLI, jalankan dari dalam folder proyek. |
+| `ModuleNotFoundError: No module named 'morarepublic'` saat jalankan `app.py`          | Python tidak melihat folder skrip (beberapa distribusi Python berjalan mode _isolated_). `app.py` sudah punya penanganan otomatis. Untuk CLI, jalankan dari dalam folder proyek.                  |
 | `ModuleNotFoundError: No module named 'morarepublic'` padahal file ada                | File mungkin terhapus — cek **Recycle Bin**. `morarepublic.py` harus satu folder dengan `app.py`.                                                                                                |
 | Aktivasi venv gagal di PowerShell                                                     | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, lalu ulangi.                                                                                                                       |
 | `streamlit` tidak dikenali                                                            | Pakai `python -m streamlit run app.py`, atau aktifkan venv dulu.                                                                                                                                 |
@@ -167,9 +206,10 @@ Secret/environment variable dengan pola yang sama seperti `DATABASE_URL`.
 
 ## Catatan Pemakaian yang Bertanggung Jawab
 
-- **Wajib** isi email kontak yang benar di dashboard / sertakan identitas di
-  User-Agent saat pakai CLI (`--email`) — ini syarat pemakaian Nominatim & Overpass.
+- **Wajib** isi email kontak yang benar di dashboard, dan ganti
+  `CONTACT_EMAIL` di `morarepublic.py` kalau pakai CLI — ini syarat
+  pemakaian Nominatim & Overpass.
 - Data berasal dari OpenStreetMap (ODbL). Hormati ketentuan lisensi saat
   mempublikasikan ulang.
-- Aplikasi ini tidak mengirim pesan apa pun ke siapa pun; hasil hanya data
-  publik yang dikumpulkan dan ditampilkan.
+- Aplikasi ini tidak mengirim pesan apa pun ke siapa pun; hasilnya hanya
+  data publik yang dikumpulkan dan ditampilkan.
