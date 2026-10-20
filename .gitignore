@@ -1,0 +1,33 @@
+# virtual environment
+venv/
+
+# database riwayat (berisi data kontak bisnis — jangan dipublish)
+*.db
+
+# local tooling / agent state
+.opencode/
+graphify-out/
+AGENTS.md
+
+# python cache
+__pycache__/
+*.pyc
+
+# hasil scraping (berisi data kontak pribadi)
+morarepublic.csv
+morarepublic_streamlit.csv
+*leads*.csv
+
+# cache API jangkauan
+coverage_cache.json
+
+# log
+*.log
+
+# environment / secret
+.env
+.env.*
+
+# jupyter
+.ipynb_checkpoints/
+streamlit*

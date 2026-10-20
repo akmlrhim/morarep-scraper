@@ -1,0 +1,5 @@
+streamlit>=1.40
+pandas
+requests
+beautifulsoup4
+sqlalchemy>=2.0
